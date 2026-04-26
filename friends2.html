@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Friends</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+        }
+        h1 {
+            font-size: 24px;
+        }
+        button {
+            padding: 10px 15px;
+            font-size: 14px;
+            margin-bottom: 20px;
+        }
+        #message {
+            padding: 10px;
+            margin: 10px 0;
+            display: none;
+        }
+        #message.info {
+            background-color: lightblue;
+            display: block;
+        }
+        #message.error {
+            background-color: lightcoral;
+            display: block;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        table th, table td {
+            border: 1px solid black;
+            padding: 10px;
+            text-align: left;
+        }
+        table th {
+            background-color: lightgray;
+        }
+        .friend-link {
+            color: blue;
+            text-decoration: underline;
+            cursor: pointer;
+        }
+        #detailSection {
+            display: none;
+            margin-top: 20px;
+            padding: 15px;
+            border: 1px solid black;
+        }
+        #detailSection.show {
+            display: block;
+        }
+        .detail-info {
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>Friends</h1>
+    
+    <div id="message"></div>
+    
+    <!-- Friends Table Section -->
+    <div id="tableSection">
+        <button id="loadAllBtn">Load All Friends</button>
+        <table id="friendsTable">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Username</th>
+                    <th>Email</th>
+                </tr>
+            </thead>
+            <tbody id="tableBody">
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Friend Details Section -->
+    <div id="detailSection">
+        <h2 id="detailName"></h2>
+        <div class="detail-info">
+            <strong>ID:</strong> <span id="detailId"></span>
+        </div>
+        <div class="detail-info">
+            <strong>Username:</strong> <span id="detailUsername"></span>
+        </div>
+        <div class="detail-info">
+            <strong>Email:</strong> <span id="detailEmail"></span>
+        </div>
+        <div class="detail-info">
+            <strong>Phone:</strong> <span id="detailPhone"></span>
+        </div>
+        <div class="detail-info">
+            <strong>Website:</strong> <span id="detailWebsite"></span>
+        </div>
+        <button id="backBtn">Back to List</button>
+    </div>
+
+    <script>
+        const API_URL = "https://jsonplaceholder.typicode.com/users";
+        
+        const loadAllBtn = document.getElementById("loadAllBtn");
+        const messageDiv = document.getElementById("message");
+        const tableBody = document.querySelector("#friendsTable tbody");
+        const tableSection = document.getElementById("tableSection");
+        const detailSection = document.getElementById("detailSection");
+        const backBtn = document.getElementById("backBtn");
+
+        function clearTable() {
+            tableBody.innerHTML = "";
+        }
+
+        function showMessage(message, type = "info") {
+            messageDiv.textContent = message;
+            if (type === "error") {
+                messageDiv.className = "error";
+            } else {
+                messageDiv.className = "info";
+            }
+            messageDiv.style.display = "block";
+        }
+
+        function hideMessage() {
+            messageDiv.style.display = "none";
+        }
+
+        function addFriendRow(friend) {
+            const row = document.createElement("tr");
+            row.innerHTML = `
+                <td>${friend.id}</td>
+                <td><a href="#" class="friend-link" onclick="showFriendDetail(${friend.id}); return false;">${friend.name}</a></td>
+                <td>${friend.username}</td>
+                <td>${friend.email}</td>
+            `;
+            tableBody.appendChild(row);
+        }
+
+        async function loadAllFriends() {
+            clearTable();
+            showMessage("Loading all friends...");
+            tableSection.style.display = "block";
+            detailSection.classList.remove("show");
+
+            try {
+                const response = await fetch(API_URL);
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error ${response.status}`);
+                }
+
+                const friends = await response.json();
+
+                if (!Array.isArray(friends) || friends.length === 0) {
+                    tableBody.innerHTML = '<tr><td colspan="4">No friends found.</td></tr>';
+                    hideMessage();
+                    return;
+                }
+
+                friends.forEach(addFriendRow);
+                hideMessage();
+            } catch (error) {
+                showMessage(`Error loading friends: ${error.message}`, "error");
+            }
+        }
+
+        async function showFriendDetail(id) {
+            if (id === "") {
+                loadAllFriends();
+                return;
+            }
+
+            clearTable();
+            showMessage(`Looking for friend with ID ${id}...`);
+
+            try {
+                const response = await fetch(`${API_URL}/${id}`);
+
+                if (response.status === 404) {
+                    showMessage(`Friend with ID ${id} was not found.`, "error");
+                    return;
+                }
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error ${response.status}`);
+                }
+
+                const friend = await response.json();
+                
+                document.getElementById("detailName").textContent = friend.name;
+                document.getElementById("detailId").textContent = friend.id;
+                document.getElementById("detailUsername").textContent = friend.username;
+                document.getElementById("detailEmail").textContent = friend.email;
+                document.getElementById("detailPhone").textContent = friend.phone;
+                document.getElementById("detailWebsite").textContent = friend.website;
+                
+                tableSection.style.display = "none";
+                detailSection.classList.add("show");
+                hideMessage();
+            } catch (error) {
+                showMessage(`Error finding friend: ${error.message}`, "error");
+            }
+        }
+
+        backBtn.addEventListener("click", function() {
+            tableSection.style.display = "block";
+            detailSection.classList.remove("show");
+            loadAllFriends();
+        });
+
+        loadAllBtn.addEventListener("click", loadAllFriends);
+
+        loadAllFriends();
+    </script>
+</body>
+</html>

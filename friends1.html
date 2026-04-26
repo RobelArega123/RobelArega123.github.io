@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Friends</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+        }
+        h1 {
+            font-size: 24px;
+        }
+        button {
+            padding: 10px 15px;
+            font-size: 14px;
+            margin-bottom: 20px;
+        }
+        #message {
+            padding: 10px;
+            margin: 10px 0;
+            display: none;
+        }
+        #message.info {
+            background-color: lightblue;
+            display: block;
+        }
+        #message.error {
+            background-color: lightcoral;
+            display: block;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        table th, table td {
+            border: 1px solid black;
+            padding: 10px;
+            text-align: left;
+        }
+        table th {
+            background-color: lightgray;
+        }
+    </style>
+</head>
+<body>
+    <h1>Friends</h1>
+    <button id="loadAllBtn">Load All Friends</button>
+    <div id="message"></div>
+    <table id="friendsTable">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Name</th>
+                <th>Username</th>
+                <th>Email</th>
+            </tr>
+        </thead>
+        <tbody id="tableBody">
+        </tbody>
+    </table>
+
+    <script>
+        const API_URL = "https://jsonplaceholder.typicode.com/users";
+        
+        const loadAllBtn = document.getElementById("loadAllBtn");
+        const messageDiv = document.getElementById("message");
+        const tableBody = document.querySelector("#friendsTable tbody");
+
+        function clearTable() {
+            tableBody.innerHTML = "";
+        }
+
+        function showMessage(message) {
+            messageDiv.textContent = message;
+            messageDiv.className = "info";
+        }
+
+        function showError(message) {
+            messageDiv.textContent = message;
+            messageDiv.className = "error";
+        }
+
+        function addFriendRow(friend) {
+            const row = document.createElement("tr");
+            row.innerHTML = `
+                <td>${friend.id}</td>
+                <td>${friend.name}</td>
+                <td>${friend.username}</td>
+                <td>${friend.email}</td>
+            `;
+            tableBody.appendChild(row);
+        }
+
+        async function loadAllFriends() {
+            clearTable();
+            showMessage("Loading all friends...");
+
+            try {
+                const response = await fetch(API_URL);
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error ${response.status}`);
+                }
+
+                const friends = await response.json();
+
+                if (!Array.isArray(friends) || friends.length === 0) {
+                    showMessage("No friends found.");
+                    return;
+                }
+
+                friends.forEach(addFriendRow);
+                showMessage(`Loaded ${friends.length} friend(s).`);
+            } catch (error) {
+                showError(`Error loading friends: ${error.message}`);
+            }
+        }
+
+        loadAllBtn.addEventListener("click", loadAllFriends);
+    </script>
+</body>
+</html>
